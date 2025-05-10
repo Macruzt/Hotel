@@ -66,8 +66,8 @@ const Dashboard = ({ children }) => {
           <SidebarItem 
             icon="🏠" 
             text="Inicio" 
-            to="/" 
-            active={location.pathname === '/'} 
+            to="/dashboard"
+            active={location.pathname === '/dashboard'}
           />
           <SidebarItem 
             icon="📒" 

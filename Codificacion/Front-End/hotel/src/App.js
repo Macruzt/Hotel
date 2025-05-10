@@ -10,6 +10,7 @@ import UsuariosRegister from './components/views/userRegister/userRegister';
 import HotelRegister from './components/views/hotelRegiter/hotelRegister';
 import RoomRegister from './components/views/roomRegister/roomRegister';
 import Login from './components/views/login/Login';
+import HomeContent from "./components/views/Dashboard/HomeContent";
 
 function App() {
   return (
@@ -40,11 +41,12 @@ function App() {
             <RoomRegister />
           </Dashboard>
         } />
-        {/* <Route path="/ayuda" element={
+        <Route path="/dashboard" element={
           <Dashboard>
-            <HelpContent />
+            <HomeContent>
+            </HomeContent>
           </Dashboard>
-        } /> */}
+        } />
       </Routes>
     </Router>
   );

@@ -5,7 +5,10 @@ import com.hoteleria.hoteleria.model.request.AuthResponse;
 import com.hoteleria.hoteleria.model.request.LoginRequest;
 import com.hoteleria.hoteleria.service.interfaces.IUserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -38,7 +41,15 @@ public class UserController {
   }
 
   @PostMapping(value = "login")
-  public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request){
-    return ResponseEntity.ok(userService.login(request));
+  public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    try {
+      AuthResponse response = userService.login(request);
+      return ResponseEntity.ok(response);
+    } catch (UsernameNotFoundException | BadCredentialsException ex) {
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Usuario y/o contraseña incorrectos");
+    } catch (Exception ex) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error interno del servidor");
+    }
   }
+
 }
