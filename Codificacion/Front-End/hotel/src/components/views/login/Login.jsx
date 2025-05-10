@@ -127,14 +127,14 @@ function Login() {
             </button>
           </div>
           
-          <div className="form-footer">
+          {/* <div className="form-footer">
             <a href="/forgot-password" className="forgot-password">
               ¿Olvidaste tu contraseña?
             </a>
             <p>
               ¿No tienes una cuenta? <a href="/register">Regístrate</a>
             </p>
-          </div>
+          </div> */}
         </form>
       </div>
     </div>
