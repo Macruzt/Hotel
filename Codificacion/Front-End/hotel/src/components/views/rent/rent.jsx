@@ -308,22 +308,6 @@ const RentasRegister = () => {
             </div>
           </div>
 
-          {/* <div className="form-group">
-            <label htmlFor="totalPrice">Precio total</label>
-            <input
-              type="number"
-              id="totalPrice"
-              placeholder="Ingrese precio total"
-              value={formData.totalPrice}
-              onChange={handleChange}
-              className={errors.totalPrice ? "input-error" : ""}
-              disabled={isSubmitting}
-            />
-            {errors.totalPrice && (
-              <span className="error-message">{errors.totalPrice}</span>
-            )}
-          </div> */}
-
           <div className="form-actions">
             <button
               type="submit"

@@ -200,6 +200,11 @@ a {
   color: #FFE4B5;
 }
 
+/* Perfil de usuario y menú de logout */
+.user-profile {
+  position: relative;
+}
+
 .user-avatar {
   width: 35px;
   height: 35px;
@@ -211,6 +216,66 @@ a {
   justify-content: center;
   font-weight: bold;
   border: 2px solid #FFD700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.logout-dropdown {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  width: 180px;
+  background: linear-gradient(to bottom, #FFFAF0, #FFF8DC);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border: 1px solid #B8860B;
+  border-bottom: 3px solid #B8860B;
+  overflow: hidden;
+  z-index: 1001;
+  animation: fadeIn 0.2s ease;
+}
+
+.logout-button {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #8B4513;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Georgia', serif;
+}
+
+.logout-button:hover {
+  background-color: rgba(184, 134, 11, 0.2);
+  color: #A0522D;
+  padding-left: 1.5rem;
+}
+
+.logout-button::before {
+  content: "→";
+  margin-right: 0.5rem;
+  color: #B8860B;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Contenido del dashboard */
@@ -618,6 +683,35 @@ textarea {
   accent-color: #B8860B;
 }
 
+/* Mensajes de error y éxito */
+.message {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.message.success {
+  background-color: rgba(46, 125, 50, 0.1);
+  color: #2e7d32;
+  border-left: 4px solid #2e7d32;
+}
+
+.message.error {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
+  border-left: 4px solid #d32f2f;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.input-error {
+  border-color: #d32f2f;
+}
+
 /* Responsive */
 @media (max-width: 767px) {
   .sidebar-open {
@@ -647,5 +741,9 @@ textarea {
   
   .search-input {
     width: 150px;
+  }
+  
+  .logout-dropdown {
+    width: 160px;
   }
 }
