@@ -53,6 +53,9 @@ Para ejecutar este proyecto necesitas:
 
 ## Estructura de la API
 
+Esto podra ser probado desde swagger http://localhost:9000/swagger-ui/index.html#
+igualmente puede ser probado desde postman
+
 ### Gestión de Usuarios
 Permite el registro y gestión de usuarios del sistema.
 
