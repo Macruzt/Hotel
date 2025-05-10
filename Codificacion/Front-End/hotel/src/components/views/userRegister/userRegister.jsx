@@ -358,7 +358,6 @@ const UsuariosRegister = () => {
               <th>Tipo de documento</th>
               <th>Número de documento</th>
               <th>Número telefónico</th>
-              <th>Acciones</th>
             </tr>
             </thead>
             <tbody>
@@ -370,10 +369,6 @@ const UsuariosRegister = () => {
                       <td>{user.documentType}</td>
                       <td>{user.documentNumber}</td>
                       <td>{user.phone}</td>
-                      <td>
-                        <button className="action-btn edit">✏️</button>
-                        <button className="action-btn delete">🗑️</button>
-                      </td>
                     </tr>
                 ))
             ) : (

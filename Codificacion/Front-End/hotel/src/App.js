@@ -8,7 +8,6 @@ import Dashboard from './components/views/Dashboard/Dashboard';
 import HomePage from './components/views/homePage/HomePage';
 import UsuariosRegister from './components/views/userRegister/userRegister';
 import HotelRegister from './components/views/hotelRegiter/hotelRegister';
-import RoomRegister from './components/views/roomRegister/roomRegister';
 import Login from './components/views/login/Login';
 import HomeContent from "./components/views/Dashboard/HomeContent";
 
@@ -34,11 +33,6 @@ function App() {
         <Route path="/hotel" element={
           <Dashboard>
             <HotelRegister />
-          </Dashboard>
-        } />
-        <Route path="/habitacion" element={
-          <Dashboard>
-            <RoomRegister />
           </Dashboard>
         } />
         <Route path="/dashboard" element={
