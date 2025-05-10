@@ -1,13 +1,25 @@
+// src/services/httpInterceptor.js
 import axios from 'axios';
 import authService from './authService';
+
+const publicEndpoints = [
+    'http://localhost:9000/api/hotels',
+    'http://localhost:9000/api/hotel-rooms'
+];
+
+const isPublicEndpoint = (url) => {
+    return publicEndpoints.some(endpoint => url.startsWith(endpoint));
+};
 
 const axiosInstance = axios.create();
 
 axiosInstance.interceptors.request.use(
     (config) => {
-        const token = authService.getToken();
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
+        if (!isPublicEndpoint(config.url)) {
+            const token = authService.getToken();
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
         }
         return config;
     },
@@ -21,7 +33,9 @@ axiosInstance.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response && error.response.status === 401) {
+        if (error.response &&
+            error.response.status === 401 &&
+            !isPublicEndpoint(error.config.url)) {
             authService.logout();
             window.location.href = '/login';
         }
