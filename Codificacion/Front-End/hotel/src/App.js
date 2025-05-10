@@ -5,19 +5,25 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Dashboard from './components/views/Dashboard/Dashboard';
 
 // Importar vistas
-import HomeContent from './components/views/Dashboard/HomeContent';
+import HomePage from './components/views/homePage/HomePage';
 import UsuariosRegister from './components/views/userRegister/userRegister';
 import HotelRegister from './components/views/hotelRegiter/hotelRegister';
 import RoomRegister from './components/views/roomRegister/roomRegister';
+import Login from './components/views/login/Login';
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={
-          <Dashboard>
-            <HomeContent />
-          </Dashboard>
+          <HomePage>
+            <HomePage /> {}
+          </HomePage>
+        } />
+        <Route path="/login" element={
+          <Login>
+            <UsuariosRegister />
+          </Login>
         } />
         <Route path="/usuarios" element={
           <Dashboard>
