@@ -33,7 +33,7 @@ public class SaleService implements ISaleService {
   @Transactional
   @Override
   public Sale save(Sale sale) {
-    HotelRoom hotelRoom = hotelRoomRepository.findByHotelAndRoom(sale.getHotelRoom().getHotel(), sale.getHotelRoom().getRoom())
+    HotelRoom hotelRoom = hotelRoomRepository.findById(sale.getHotelRoom().getId())
         .orElseThrow(() -> new IllegalArgumentException("No se encontró la habitación en el hotel o habitación especificada"));
 
     if (hotelRoom.getQuantity() <= 0) {

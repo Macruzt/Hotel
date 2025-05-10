@@ -1,98 +1,203 @@
 import React, { useState, useEffect } from "react";
 import "../Dashboard/Dashboard.css";
-import http from "../../services/httpInterceptor"; // Asumiendo que ya tienes configurado el interceptor
+import axios from 'axios';
+import authService from "../../services/authService";
+
+// Definir endpoints y configuración para las peticiones
+const API_URL = 'http://localhost:9000/api';
+const ENDPOINTS = {
+  USERS: `${API_URL}/users`,
+  HOTELS: `${API_URL}/hotels`,
+  HOTEL_ROOMS: `${API_URL}/hotel-rooms`,
+  SALES: `${API_URL}/sales`
+};
+
+// Función para obtener config con token
+const getAuthConfig = () => {
+  const token = authService.getToken();
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+};
 
 const RentasRegister = () => {
   // Estados para el formulario
   const [formData, setFormData] = useState({
     userId: "",
+    hotelId: "", // Nuevo campo para seleccionar hotel
     hotelRoomId: "",
     startDate: "",
     endDate: "",
-    totalPrice: "",
-    observations: "",
+    totalPrice: ""
   });
+
+  // Precios fijos para las habitaciones (simulados)
+  const roomPrices = {
+    "ESTANDAR": { "SENCILLA": 100000, "DOBLE": 150000 },
+    "JUNIOR": { "TRIPLE": 200000, "CUADRUPLE": 250000 },
+    "SUITE": { "SENCILLA": 300000, "DOBLE": 350000, "TRIPLE": 400000 }
+  };
 
   // Estado para mensajes de error/éxito
   const [message, setMessage] = useState({ text: "", type: "" });
 
-  // Estado para guardar la lista de rentas
-  const [rents, setRents] = useState([]);
-
-  // Estado para guardar la lista de usuarios
+  // Estados para listas
+  const [sales, setSales] = useState([]);
   const [users, setUsers] = useState([]);
+  const [hotels, setHotels] = useState([]);
+  const [allHotelRooms, setAllHotelRooms] = useState([]);
+  const [filteredHotelRooms, setFilteredHotelRooms] = useState([]);
 
-  // Estado para guardar la lista de habitaciones
-  const [hotelRooms, setHotelRooms] = useState([]);
-
-  // Estado para controlar el envío del formulario
+  // Estados de UI
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Estado para los errores de validación
   const [errors, setErrors] = useState({});
 
   // Cargar datos al iniciar el componente
   useEffect(() => {
-    fetchRents();
+    fetchSales();
     fetchUsers();
-    fetchHotelRooms();
+    fetchHotels();
+    fetchAllHotelRooms();
   }, []);
 
-  // Función para obtener la lista de rentas
-  const fetchRents = async () => {
+  // Calcular precio total cuando cambian las fechas
+  useEffect(() => {
+    calculateTotalPrice();
+  }, [formData.startDate, formData.endDate, formData.hotelRoomId]);
+
+  // Función para obtener la lista de ventas/rentas
+  const fetchSales = async () => {
     try {
-      const response = await http.get("http://localhost:9000/api/rents");
-      setRents(response.data);
+      const response = await axios.get(ENDPOINTS.SALES, getAuthConfig());
+      setSales(response.data);
     } catch (error) {
-      console.error("Error al obtener rentas:", error);
+      console.error("Error al obtener ventas:", error);
       setMessage({
-        text: "Error al cargar la lista de rentas",
-        type: "error",
+        text: "Error al cargar la lista de ventas",
+        type: "error"
       });
     }
   };
 
   // Función para obtener la lista de usuarios
   const fetchUsers = async () => {
-    try {   
-      const response = await http.get("http://localhost:5432/hoteleria/api/users");
+    try {
+      const response = await axios.get(ENDPOINTS.USERS, getAuthConfig());
       setUsers(response.data);
     } catch (error) {
       console.error("Error al obtener usuarios:", error);
       setMessage({
         text: "Error al cargar la lista de usuarios",
-        type: "error",
+        type: "error"
       });
     }
   };
 
-  // Función para obtener la lista de habitaciones
-  const fetchHotelRooms = async () => {
+  // Función para obtener la lista de hoteles
+  const fetchHotels = async () => {
     try {
-      const response = await http.get("http://localhost:9000/api/hotelRooms");
-      setHotelRooms(response.data);
+      const response = await axios.get(ENDPOINTS.HOTELS);
+      setHotels(response.data);
+    } catch (error) {
+      console.error("Error al obtener hoteles:", error);
+      setMessage({
+        text: "Error al cargar la lista de hoteles",
+        type: "error"
+      });
+    }
+  };
+
+  // Función para obtener todas las habitaciones de hotel
+  const fetchAllHotelRooms = async () => {
+    try {
+      const response = await axios.get(ENDPOINTS.HOTEL_ROOMS);
+      setAllHotelRooms(response.data);
     } catch (error) {
       console.error("Error al obtener habitaciones:", error);
       setMessage({
         text: "Error al cargar la lista de habitaciones",
-        type: "error",
+        type: "error"
       });
     }
+  };
+
+  // Filtrar habitaciones por hotel seleccionado
+  const filterRoomsByHotel = (hotelId) => {
+    if (!hotelId) {
+      setFilteredHotelRooms([]);
+      return;
+    }
+
+    const filtered = allHotelRooms.filter(room => room.hotel.id === hotelId);
+    setFilteredHotelRooms(filtered);
+
+    // Si había una habitación seleccionada, limpiarla
+    setFormData(prev => ({
+      ...prev,
+      hotelRoomId: "",
+      totalPrice: ""
+    }));
+  };
+
+  // Calcular el precio total
+  const calculateTotalPrice = () => {
+    const { startDate, endDate, hotelRoomId } = formData;
+
+    if (!startDate || !endDate || !hotelRoomId) {
+      return;
+    }
+
+    // Encontrar la habitación seleccionada
+    const selectedRoom = filteredHotelRooms.find(room => room.id === hotelRoomId);
+
+    if (!selectedRoom) {
+      return;
+    }
+
+    // Obtener el precio por noche según tipo y acomodación
+    const pricePerNight = getPriceForRoom(selectedRoom.room.type, selectedRoom.room.accommodation);
+
+    // Calcular número de días
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Calcular precio total
+    const totalPrice = pricePerNight * diffDays;
+
+    // Actualizar el formulario
+    setFormData(prev => ({
+      ...prev,
+      totalPrice: totalPrice.toString()
+    }));
+  };
+
+  // Obtener precio para un tipo de habitación y acomodación
+  const getPriceForRoom = (type, accommodation) => {
+    if (roomPrices[type] && roomPrices[type][accommodation]) {
+      return roomPrices[type][accommodation];
+    }
+    return 100000; // Precio por defecto
   };
 
   // Manejar cambios en los inputs
   const handleChange = (e) => {
     const { id, value } = e.target;
+
     setFormData({
       ...formData,
-      [id]: value,
+      [id]: value
     });
+
+    // Si cambia el hotel, filtrar habitaciones
+    if (id === "hotelId") {
+      filterRoomsByHotel(value);
+    }
 
     // Limpiar error específico cuando el usuario comienza a escribir
     if (errors[id]) {
       setErrors({
         ...errors,
-        [id]: null,
+        [id]: null
       });
     }
   };
@@ -104,6 +209,11 @@ const RentasRegister = () => {
     // Validar usuario
     if (!formData.userId) {
       newErrors.userId = "Debe seleccionar un usuario";
+    }
+
+    // Validar hotel
+    if (!formData.hotelId) {
+      newErrors.hotelId = "Debe seleccionar un hotel";
     }
 
     // Validar habitación
@@ -120,18 +230,16 @@ const RentasRegister = () => {
     if (!formData.endDate) {
       newErrors.endDate = "La fecha de fin es requerida";
     } else if (new Date(formData.endDate) <= new Date(formData.startDate)) {
-      newErrors.endDate =
-        "La fecha de fin debe ser posterior a la fecha de inicio";
+      newErrors.endDate = "La fecha de fin debe ser posterior a la fecha de inicio";
     }
 
-    // Validar precio total
-    if (!formData.totalPrice) {
-      newErrors.totalPrice = "El precio total es requerido";
-    } else if (isNaN(formData.totalPrice) || formData.totalPrice <= 0) {
-      newErrors.totalPrice = "El precio debe ser un número mayor que cero";
+    // Validar precio total (debería calcularse automáticamente)
+    if (!formData.totalPrice || formData.totalPrice === "0") {
+      newErrors.totalPrice = "No se ha podido calcular el precio total";
     }
 
-    return newErrors;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Manejar envío del formulario
@@ -139,11 +247,7 @@ const RentasRegister = () => {
     e.preventDefault();
 
     // Validar formulario
-    const formErrors = validateForm();
-    setErrors(formErrors);
-
-    // Si hay errores, detener el envío
-    if (Object.keys(formErrors).length > 0) {
+    if (!validateForm()) {
       return;
     }
 
@@ -152,33 +256,32 @@ const RentasRegister = () => {
 
     try {
       // Datos a enviar a la API
-      const rentData = {
-        userId: formData.userId,
-        hotelRoomId: formData.hotelRoomId,
+      const saleData = {
+        user: { id: formData.userId },
+        hotelRoom: { id: formData.hotelRoomId },
         startDate: formData.startDate,
         endDate: formData.endDate,
-        totalPrice: parseFloat(formData.totalPrice),
-        observations: formData.observations,
+        totalPrice: parseFloat(formData.totalPrice)
       };
 
       // Realizar la petición POST
-      await http.post("http://localhost:9000/api/rents", rentData);
+      await axios.post(ENDPOINTS.SALES, saleData, getAuthConfig());
 
       // Mostrar mensaje de éxito
       setMessage({
-        text: "Renta registrada exitosamente",
-        type: "success",
+        text: "Venta registrada exitosamente",
+        type: "success"
       });
 
       // Limpiar formulario
       resetForm();
 
-      // Actualizar lista de rentas
-      fetchRents();
+      // Actualizar lista de ventas
+      fetchSales();
     } catch (error) {
-      console.error("Error al registrar renta:", error);
+      console.error("Error al registrar venta:", error);
 
-      let errorMessage = "Error al registrar renta";
+      let errorMessage = "Error al registrar la venta";
 
       // Mostrar mensaje de error específico si está disponible
       if (error.response && error.response.data) {
@@ -187,7 +290,7 @@ const RentasRegister = () => {
 
       setMessage({
         text: errorMessage,
-        type: "error",
+        type: "error"
       });
     } finally {
       setIsSubmitting(false);
@@ -198,12 +301,13 @@ const RentasRegister = () => {
   const resetForm = () => {
     setFormData({
       userId: "",
+      hotelId: "",
       hotelRoomId: "",
       startDate: "",
       endDate: "",
-      totalPrice: "",
-      observations: "",
+      totalPrice: ""
     });
+    setFilteredHotelRooms([]);
     setErrors({});
   };
 
@@ -215,160 +319,212 @@ const RentasRegister = () => {
 
   // Formatear fecha para mostrar en la tabla
   const formatDate = (dateString) => {
+    if (!dateString) return "-";
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
     return new Date(dateString).toLocaleDateString("es-ES", options);
   };
 
+  // Formatear precio como moneda
+  const formatCurrency = (amount) => {
+    if (!amount) return "$0";
+    return `$${parseInt(amount).toLocaleString('es-CO')}`;
+  };
+
+  // Obtener nombre de usuario por ID
+  const getUserName = (userId) => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.fullName : "Usuario desconocido";
+  };
+
+  // Obtener detalles de habitación por ID
+  const getRoomDetails = (roomId) => {
+    const room = allHotelRooms.find(r => r.id === roomId);
+    if (!room) return { hotelName: "Desconocido", roomType: "Desconocida" };
+
+    return {
+      hotelName: room.hotel.name,
+      roomType: `${room.room.type} - ${room.room.accommodation}`
+    };
+  };
+
   return (
-    <div className="content-section">
-      <h2 className="section-title">Registro de Rentas</h2>
-      <p className="section-description">
-        Complete el formulario para registrar nuevas rentas de habitaciones.
-      </p>
+      <div className="content-section">
+        <h2 className="section-title">Registro de Ventas</h2>
+        <p className="section-description">
+          Complete el formulario para registrar nuevas ventas de habitaciones.
+        </p>
 
-      {message.text && (
-        <div className={`message ${message.type}`}>{message.text}</div>
-      )}
+        {message.text && (
+            <div className={`message ${message.type}`}>
+              {message.text}
+            </div>
+        )}
 
-      <div className="form-container">
-        <form className="register-form" onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="userId">Usuario</label>
-              <select
-                id="userId"
-                value={formData.userId}
-                onChange={handleChange}
-                className={errors.userId ? "input-error" : ""}
-                disabled={isSubmitting}
+        <div className="form-container">
+          <form className="register-form" onSubmit={handleSubmit}>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="userId">Usuario</label>
+                <select
+                    id="userId"
+                    value={formData.userId}
+                    onChange={handleChange}
+                    className={errors.userId ? "input-error" : ""}
+                    disabled={isSubmitting}
+                >
+                  <option value="">Seleccionar usuario</option>
+                  {users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.fullName} - {user.documentNumber}
+                      </option>
+                  ))}
+                </select>
+                {errors.userId && <span className="error-message">{errors.userId}</span>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="hotelId">Hotel</label>
+                <select
+                    id="hotelId"
+                    value={formData.hotelId}
+                    onChange={handleChange}
+                    className={errors.hotelId ? "input-error" : ""}
+                    disabled={isSubmitting}
+                >
+                  <option value="">Seleccionar hotel</option>
+                  {hotels.map((hotel) => (
+                      <option key={hotel.id} value={hotel.id}>
+                        {hotel.name} - {hotel.city}
+                      </option>
+                  ))}
+                </select>
+                {errors.hotelId && <span className="error-message">{errors.hotelId}</span>}
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="hotelRoomId">Habitación</label>
+                <select
+                    id="hotelRoomId"
+                    value={formData.hotelRoomId}
+                    onChange={handleChange}
+                    className={errors.hotelRoomId ? "input-error" : ""}
+                    disabled={isSubmitting || !formData.hotelId}
+                >
+                  <option value="">Seleccionar habitación</option>
+                  {filteredHotelRooms.map((hotelRoom) => (
+                      <option key={hotelRoom.id} value={hotelRoom.id}>
+                        {hotelRoom.room.type} - {hotelRoom.room.accommodation} - {formatCurrency(getPriceForRoom(hotelRoom.room.type, hotelRoom.room.accommodation))}
+                      </option>
+                  ))}
+                </select>
+                {errors.hotelRoomId && <span className="error-message">{errors.hotelRoomId}</span>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="totalPrice">Precio Total</label>
+                <input
+                    type="text"
+                    id="totalPrice"
+                    value={formData.totalPrice ? formatCurrency(formData.totalPrice) : ""}
+                    readOnly
+                    className={errors.totalPrice ? "input-error" : ""}
+                />
+                {errors.totalPrice && <span className="error-message">{errors.totalPrice}</span>}
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="startDate">Fecha de inicio</label>
+                <input
+                    type="date"
+                    id="startDate"
+                    value={formData.startDate}
+                    onChange={handleChange}
+                    className={errors.startDate ? "input-error" : ""}
+                    disabled={isSubmitting}
+                    min={new Date().toISOString().split('T')[0]}
+                />
+                {errors.startDate && <span className="error-message">{errors.startDate}</span>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="endDate">Fecha de fin</label>
+                <input
+                    type="date"
+                    id="endDate"
+                    value={formData.endDate}
+                    onChange={handleChange}
+                    className={errors.endDate ? "input-error" : ""}
+                    disabled={isSubmitting}
+                    min={formData.startDate || new Date().toISOString().split('T')[0]}
+                />
+                {errors.endDate && <span className="error-message">{errors.endDate}</span>}
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={isSubmitting}
               >
-                <option value="">Seleccionar usuario</option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.fullName} - {user.documentNumber}
-                  </option>
-                ))}
-              </select>
-              {errors.userId && (
-                <span className="error-message">{errors.userId}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="hotelRoomId">Habitación</label>
-              <select
-                id="hotelRoomId"
-                value={formData.hotelRoomId}
-                onChange={handleChange}
-                className={errors.hotelRoomId ? "input-error" : ""}
-                disabled={isSubmitting}
+                {isSubmitting ? "Guardando..." : "Registrar Venta"}
+              </button>
+              <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
               >
-                <option value="">Seleccionar habitación</option>
-                {hotelRooms.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.roomNumber} - {room.roomType} (${room.pricePerNight})
-                  </option>
-                ))}
-              </select>
-              {errors.hotelRoomId && (
-                <span className="error-message">{errors.hotelRoomId}</span>
-              )}
+                Cancelar
+              </button>
             </div>
-          </div>
+          </form>
+        </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="startDate">Fecha de inicio</label>
-              <input
-                type="date"
-                id="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                className={errors.startDate ? "input-error" : ""}
-                disabled={isSubmitting}
-              />
-              {errors.startDate && (
-                <span className="error-message">{errors.startDate}</span>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="endDate">Fecha de fin</label>
-              <input
-                type="date"
-                id="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                className={errors.endDate ? "input-error" : ""}
-                disabled={isSubmitting}
-              />
-              {errors.endDate && (
-                <span className="error-message">{errors.endDate}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Guardando..." : "Guardar Renta"}
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
-      </div>
-
-      <div className="users-table-container">
-        <h3 className="table-title">Rentas Registradas</h3>
-        <table className="users-table">
-          <thead>
+        <div className="users-table-container">
+          <h3 className="table-title">Ventas Registradas</h3>
+          <table className="users-table">
+            <thead>
             <tr>
               <th>Usuario</th>
+              <th>Hotel</th>
               <th>Habitación</th>
               <th>Fecha inicio</th>
               <th>Fecha fin</th>
               <th>Precio</th>
             </tr>
-          </thead>
-          <tbody>
-            {rents.length > 0 ? (
-              rents.map((rent) => {
-                const user = users.find((u) => u.id === rent.userId) || {};
-                const room =
-                  hotelRooms.find((r) => r.id === rent.hotelRoomId) || {};
+            </thead>
+            <tbody>
+            {sales.length > 0 ? (
+                sales.map((sale) => {
+                  const roomDetails = getRoomDetails(sale.hotelRoom?.id);
 
-                return (
-                  <tr key={rent.id}>
-                    <td>{user.fullName || "Usuario desconocido"}</td>
-                    <td>{room.roomNumber || "Habitación desconocida"}</td>
-                    <td>{formatDate(rent.startDate)}</td>
-                    <td>{formatDate(rent.endDate)}</td>
-                    <td>${rent.totalPrice}</td>
-                    <td>{rent.observations || "-"}</td>
-                  </tr>
-                );
-              })
+                  return (
+                      <tr key={sale.id}>
+                        <td>{getUserName(sale.user?.id)}</td>
+                        <td>{roomDetails.hotelName}</td>
+                        <td>{roomDetails.roomType}</td>
+                        <td>{formatDate(sale.startDate)}</td>
+                        <td>{formatDate(sale.endDate)}</td>
+                        <td>{formatCurrency(sale.totalPrice)}</td>
+                      </tr>
+                  );
+                })
             ) : (
-              <tr>
-                <td colSpan="6" style={{ textAlign: "center" }}>
-                  No hay rentas registradas
-                </td>
-              </tr>
+                <tr>
+                  <td colSpan="7" style={{ textAlign: "center" }}>
+                    No hay ventas registradas
+                  </td>
+                </tr>
             )}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
   );
 };
 

@@ -90,7 +90,6 @@ const Dashboard = ({ children }) => {
         </nav>
       </div>
 
-      {/* Contenido principal - contenedor fijo */}
       <div className={`main-content ${sidebarOpen ? 'content-with-sidebar' : ''}`}>
         {/* Barra superior - fija */}
         <TopHeader 

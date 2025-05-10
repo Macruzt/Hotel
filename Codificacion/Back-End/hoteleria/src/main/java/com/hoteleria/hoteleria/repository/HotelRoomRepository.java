@@ -13,6 +13,8 @@ public interface HotelRoomRepository extends JpaRepository<HotelRoom, UUID> {
 
   Optional<HotelRoom> findByHotelAndRoom(Hotel hotel, Room room);
 
+  Optional<HotelRoom> findById(UUID id);
+
   @Query("SELECT COALESCE(SUM(hr.quantity), 0) FROM HotelRoom hr WHERE hr.hotel = :hotel")
   int sumCantidadByHotel(Hotel hotel);
 
