@@ -81,6 +81,12 @@ const Dashboard = ({ children }) => {
             to="/hotel" 
             active={location.pathname === '/hotel'} 
           />
+          <SidebarItem 
+            icon="💰" 
+            text="Registro venta" 
+            to="/Alquiler"
+            active={location.pathname === '/Alquiler'}
+          />
         </nav>
       </div>
 

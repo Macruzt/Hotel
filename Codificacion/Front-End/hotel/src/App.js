@@ -10,6 +10,7 @@ import UsuariosRegister from './components/views/userRegister/userRegister';
 import HotelRegister from './components/views/hotelRegiter/hotelRegister';
 import Login from './components/views/login/Login';
 import HomeContent from "./components/views/Dashboard/HomeContent";
+import RentasRegister from './components/views/rent/rent';
 
 function App() {
   return (
@@ -39,6 +40,12 @@ function App() {
           <Dashboard>
             <HomeContent>
             </HomeContent>
+          </Dashboard>
+        } />
+        <Route path="/alquiler" element={
+          <Dashboard>
+            <RentasRegister>
+            </RentasRegister>
           </Dashboard>
         } />
       </Routes>
